@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Reserve a stay | LuxeStay{% endblock %}
+{% block content %}
+<section class="page-intro">
+	<p class="eyebrow">YOUR STAY, MADE SIMPLE</p>
+	<h1>Make it a LuxeStay.</h1>
+	<p>Choose your guest, room and dates. Our reservation system checks for date conflicts before confirming.</p>
+</section>
+<div class="booking-layout">
+	<section class="panel booking-panel">
+		<div class="section-heading"><div><p class="eyebrow">RESERVATION DETAILS</p><h2>Plan your visit</h2></div><span class="step-mark">01 <i>/ 01</i></span></div>
+		<form method="post" class="form-grid single">
+			<label>Customer<select name="customer_id" required>{% for c in customers %}<option value="{{ c.customer_id }}">{{ c.name }}</option>{% endfor %}</select></label>
+			<label>Room<select name="room_id" required>{% for r in rooms %}<option value="{{ r.room_id }}">{{ r.room_no }} — {{ r.type_name }} (₹{{ '%.0f'|format(r.price_per_night) }}/night)</option>{% endfor %}</select></label>
+			<label>Staff member<select name="staff_id" required>{% for s in staff %}<option value="{{ s.staff_id }}">{{ s.name }}</option>{% endfor %}</select></label>
+			<div class="date-fields">
+				<label>Check-in<input type="date" name="check_in" required></label>
+				<label>Check-out<input type="date" name="check_out" required></label>
+			</div>
+			<button type="submit">Confirm reservation <span aria-hidden="true">→</span></button>
+		</form>
+	</section>
+	<aside class="booking-note">
+		<p class="eyebrow eyebrow-light">A NOTE ON YOUR RESERVATION</p>
+		<h2>Good stays begin with the details.</h2>
+		<p>Your dates are checked against existing reservations. Back-to-back stays are welcome; overlapping bookings are not.</p>
+		<div class="booking-note-rule"></div>
+		<p class="small-note">Your bill is calculated from the number of nights and the selected room rate.</p>
+	</aside>
+</div>
+{% endblock %}
