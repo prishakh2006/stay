@@ -8,4 +8,4 @@ document.querySelectorAll('form').forEach(function (form) {
       alert('Check-out must be after check-in.');
     }
   });
-});
+});s
