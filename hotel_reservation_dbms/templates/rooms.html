@@ -1,31 +1,35 @@
 {% extends 'base.html' %}
-{% block title %}Rooms | Blue Orchid{% endblock %}
+
+{% block title %}All Rooms - LuxeStay Hotel{% endblock %}
+
 {% block content %}
-<section class="page-intro">
-	<p class="eyebrow">STAY YOUR WAY</p>
-	<h1>Rooms with room to breathe.</h1>
-	<p>Explore all 30 rooms at Blue Orchid. Your stay total is calculated from nights and the room rate.</p>
+<section class="page-header">
+    <h1>🛏️ Hotel Rooms Directory</h1>
+    <p>Browse all available room accommodations, guest capacities, and nightly rates.</p>
 </section>
-<section class="room-grid" aria-label="All Blue Orchid rooms">
-	{% for room in rooms %}
-		{% if room.type_name == 'Standard' %}
-			{% set room_image = 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1000&q=85' %}
-		{% elif room.type_name == 'Deluxe' %}
-			{% set room_image = 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=1000&q=85' %}
-		{% else %}
-			{% set room_image = 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1000&q=85' %}
-		{% endif %}
-		<article class="room-card">
-			<div class="room-image-wrap">
-				<img src="{{ room_image }}" alt="{{ room.type_name }} room at Blue Orchid" loading="lazy">
-				<span class="room-number">ROOM {{ room.room_no }}</span>
-			</div>
-			<div class="room-card-body">
-				<div class="room-card-heading"><div><p class="eyebrow">{{ room.type_name|upper }}</p><h2>{{ room.type_name }} room</h2></div><span class="floor-label">Floor {{ room.floor }}</span></div>
-				<div class="room-card-details"><span>{{ room.capacity }} guests</span><strong>₹{{ '%.0f'|format(room.price_per_night) }} <small>/ night</small></strong></div>
-				<a class="button button-outline" href="{{ url_for('book') }}">Book this room <span aria-hidden="true">↗</span></a>
-			</div>
-		</article>
-	{% endfor %}
+
+<section class="rooms-container">
+    <div class="rooms-grid">
+        {% for room in rooms %}
+        <div class="room-card">
+            <div class="room-card-header">
+                <span class="room-pill">Room {{ room.room_no }}</span>
+                <span class="floor-pill">Floor {{ room.floor }}</span>
+            </div>
+            <div class="room-card-body">
+                <h3 class="room-title">{{ room.type_name }} Room</h3>
+                <ul class="room-specs">
+                    <li><strong>Capacity:</strong> {{ room.capacity }} Guests</li>
+                    <li><strong>Rate:</strong> ₹{{ "%.2f"|format(room.price_per_night) }} / night</li>
+                </ul>
+            </div>
+            <div class="room-card-footer">
+                <a href="{{ url_for('book', room_id=room.room_id) }}" class="btn btn-outline btn-block">
+                    Book Room {{ room.room_no }}
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
 </section>
 {% endblock %}

@@ -1,40 +1,157 @@
 {% extends 'base.html' %}
-{% block title %}Payments & reports | Blue Orchid{% endblock %}
+
+{% block title %}Payments & Reports - LuxeStay Hotel{% endblock %}
+
 {% block content %}
-<section class="page-intro">
-	<p class="eyebrow">FINANCIAL OVERVIEW</p>
-	<h1>Payments &amp; reports</h1>
-	<p>Track room occupancy, calculated bills and every recorded payment.</p>
+<section class="page-header">
+    <h1>💳 Payments & Financial Reports</h1>
+    <p>Monitor daily hotel occupancy, record guest payments (Cash, Card, UPI), and view calculated billing balances.</p>
 </section>
-<section class="report-overview" aria-label="Hotel reports">
-	<article class="report-stat report-stat-primary">
-		<p class="eyebrow eyebrow-light">TODAY'S OCCUPANCY</p>
-		<p class="occupancy-value">{{ occupancy.occupied }}<span> / {{ occupancy.total }}</span></p>
-		<p class="report-caption">Rooms occupied on {{ today }}</p>
-	</article>
-	<article class="report-stat"><p class="eyebrow">BILL CALCULATION</p><h2>Nights × rate</h2><p>Each stay total is calculated from its duration and room price. No bill total is stored.</p></article>
-	<article class="report-stat"><p class="eyebrow">PAYMENT METHODS</p><h2>Simple &amp; secure</h2><p>Record Cash, Card or UPI payments. Card numbers are never collected.</p></article>
-</section>
-<section class="panel payment-panel">
-	<div class="section-heading"><div><p class="eyebrow">PAYMENT ENTRY</p><h2>Record a payment</h2></div><span class="step-mark">FLEXIBLE PAYMENTS</span></div>
-	<form method="post" class="form-grid payment-form">
-		<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-		<label>Reservation<select name="reservation_id" required>{% for r in reservations %}<option value="{{ r.reservation_id }}">#{{ r.reservation_id }} — {{ r.name }}, room {{ r.room_no }} (bill ₹{{ '%.2f'|format(r.bill_total) }})</option>{% endfor %}</select></label>
-		<label>Amount (₹)<input type="number" name="amount" min="0.01" step="0.01" required></label>
-		<label>Payment mode<select name="mode" required><option>Cash</option><option>Card</option><option>UPI</option></select></label>
-		<label>Payment date<input type="date" name="pay_date" value="{{ today }}" required></label>
-		<button type="submit">Save payment <span aria-hidden="true">→</span></button>
-	</form>
-</section>
-<section class="panel report-table-panel">
-	<div class="section-heading"><div><p class="eyebrow">RESERVATION ACCOUNTS</p><h2>Bill and payment status</h2></div><span class="step-mark">CALCULATED TOTALS</span></div>
-	<div class="table-wrap"><table>
-		<thead><tr><th>Reservation</th><th>Customer</th><th>Room</th><th>Bill</th><th>Paid</th><th>Pending</th></tr></thead>
-		<tbody>{% for p in payments %}
-			<tr><td class="table-primary">#{{ p.reservation_id }}</td><td>{{ p.name }}</td><td>{{ p.room_no }}</td><td>₹{{ '%.2f'|format(p.bill_total) }}</td><td>₹{{ '%.2f'|format(p.paid) }}</td><td class="{% if p.pending > 0 %}due{% endif %}">₹{{ '%.2f'|format(p.pending) }}</td></tr>
-		{% else %}
-			<tr><td colspan="6" class="empty-state">No reservations to report yet.</td></tr>
-		{% endfor %}</tbody>
-	</table></div>
+
+<!-- Top Row: Occupancy Report (Query 4) & Record Payment Form -->
+<div class="two-column-layout">
+    <!-- Occupancy Widget (Query 4) -->
+    <div class="panel widget-panel">
+        <div class="panel-header">
+            <h3>📊 Occupancy Report (Query 4)</h3>
+            <p>Rooms occupied on target date divided by total rooms.</p>
+        </div>
+
+        <form method="get" action="{{ url_for('payments') }}" class="date-picker-inline">
+            <label for="occupancy_date">Select Date:</label>
+            <input type="date" id="occupancy_date" name="occupancy_date" value="{{ occupancy_date }}" required>
+            <button type="submit" class="btn btn-sm btn-secondary">Check</button>
+        </form>
+
+        <div class="occupancy-display">
+            <div class="occupancy-circle">
+                <span class="occupancy-number">{{ rooms_occupied }} / {{ total_rooms }}</span>
+                <span class="occupancy-caption">Rooms Occupied</span>
+            </div>
+            <div class="occupancy-details">
+                <p><strong>Occupancy Rate:</strong> {{ occupancy_percent }}%</p>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" style="width: {{ occupancy_percent }}%;"></div>
+                </div>
+                <small class="text-muted">A room is occupied if check_in &le; target_date &lt; check_out.</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Record Payment Form -->
+    <div class="panel form-panel">
+        <div class="panel-header">
+            <h3>💵 Record New Payment</h3>
+            <p>Multiple payments supported per reservation (e.g. deposit + final).</p>
+        </div>
+
+        <form method="post" action="{{ url_for('payments') }}" class="standard-form">
+            <div class="form-group">
+                <label for="reservation_id">Select Reservation: <span class="required">*</span></label>
+                <select id="reservation_id" name="reservation_id" required>
+                    <option value="" disabled selected>-- Select Reservation with Due Balance --</option>
+                    {% for res in active_reservations %}
+                    <option value="{{ res.reservation_id }}">
+                        #{{ res.reservation_id }} - {{ res.customer_name }}, Room {{ res.room_no }} (Due: ₹{{ "%.2f"|format(res.pending_amount) }})
+                    </option>
+                    {% else %}
+                    <option value="" disabled>No reservations with pending balance</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="amount">Payment Amount (₹): <span class="required">*</span></label>
+                <input type="number" id="amount" name="amount" step="0.01" min="1" placeholder="e.g. 3500.00" required>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group col-half">
+                    <label for="mode">Payment Mode: <span class="required">*</span></label>
+                    <select id="mode" name="mode" required>
+                        <option value="Cash">Cash</option>
+                        <option value="Card">Card</option>
+                        <option value="UPI">UPI</option>
+                    </select>
+                    <small class="form-help">Card numbers are not stored (PCI-DSS).</small>
+                </div>
+                <div class="form-group col-half">
+                    <label for="pay_date">Payment Date: <span class="required">*</span></label>
+                    <input type="date" id="pay_date" name="pay_date" value="{{ today_date }}" required>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-success">Record Payment</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Bottom Section: Billing & Pending Payment Overview (Query 3) -->
+<section class="panel full-width-panel">
+    <div class="panel-header flex-header">
+        <div>
+            <h3>📑 Reservation Accounts & Billing Status (Query 3)</h3>
+            <p>Derived stay total = Nights &times; Rate. Balance = Bill &minus; Total Payments.</p>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Res #</th>
+                    <th>Customer</th>
+                    <th>Room</th>
+                    <th>Dates</th>
+                    <th>Nights</th>
+                    <th>Bill Total</th>
+                    <th>Amount Paid</th>
+                    <th>Pending Balance</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in reports %}
+                <tr>
+                    <td>#{{ r.reservation_id }}</td>
+                    <td><strong>{{ r.customer_name }}</strong></td>
+                    <td>Room {{ r.room_no }} ({{ r.type_name }})</td>
+                    <td><small>{{ r.check_in }} to {{ r.check_out }}</small></td>
+                    <td>{{ r.nights }}</td>
+                    <td>₹{{ "%.2f"|format(r.bill_total) }}</td>
+                    <td>₹{{ "%.2f"|format(r.total_paid) }}</td>
+                    <td>
+                        {% if r.pending_amount > 0 %}
+                            <strong class="text-danger">₹{{ "%.2f"|format(r.pending_amount) }}</strong>
+                        {% else %}
+                            <span class="badge badge-success">Fully Paid</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="status-pill status-{{ r.status|lower }}">
+                            {{ r.status }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if r.status == 'Booked' %}
+                        <form method="post" action="{{ url_for('cancel_reservation', reservation_id=r.reservation_id) }}" onsubmit="return confirm('Cancel reservation #{{ r.reservation_id }}?');">
+                            <button type="submit" class="btn btn-xs btn-danger">Cancel</button>
+                        </form>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="10" class="empty-table">No reservations recorded yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </section>
 {% endblock %}

@@ -1,48 +1,101 @@
 {% extends 'base.html' %}
-{% block title %}Reserve a stay | Blue Orchid{% endblock %}
+
+{% block title %}Book a Room - LuxeStay Hotel{% endblock %}
+
 {% block content %}
-<style>
-	.phone-update-confirmation { flex-direction: row; align-items: center; }
-	.phone-update-confirmation input { width: auto; min-height: 0; }
-</style>
-<section class="page-intro">
-	<p class="eyebrow">YOUR STAY, MADE SIMPLE</p>
-	<h1>Make it a Blue Orchid stay.</h1>
-	<p>Choose your guest, room and dates. Our reservation system checks for date conflicts before confirming.</p>
+<section class="page-header">
+    <h1>📅 Reserve a Room</h1>
+    <p>Complete the form below to create a new reservation. Double-booking conflicts are automatically rejected by database triggers.</p>
 </section>
+
 <div class="booking-layout">
-	<section class="panel booking-panel">
-		<div class="section-heading"><div><p class="eyebrow">RESERVATION DETAILS</p><h2>Plan your visit</h2></div><span class="step-mark">01 <i>/ 01</i></span></div>
-		<form method="post" class="form-grid single">
-			<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-			<label>Customer<select id="booking-customer" name="customer_id" required>
-				{% for c in customers %}
-					<option value="{{ c.customer_id }}" data-phone="{{ c.phone or '' }}"{% if form_values.get('customer_id', '') == c.customer_id|string or (not form_values.get('customer_id') and loop.first) %} selected{% endif %}>{{ c.name }}</option>
-				{% endfor %}
-			</select></label>
-			<label>Customer phone
-				<input id="booking-phone" type="tel" name="phone" inputmode="tel" autocomplete="tel" maxlength="16"
-					pattern="\+?[0-9]{10,15}" title="Enter 10 to 15 digits, with an optional leading +"
-					value="{{ form_values.get('phone', customers[0].phone or '' if customers else '') }}" required>
-			</label>
-			<label>Room<select name="room_id" required>{% for r in rooms %}<option value="{{ r.room_id }}"{% if form_values.get('room_id', '') == r.room_id|string %} selected{% endif %}>{{ r.room_no }} — {{ r.type_name }} (₹{{ '%.0f'|format(r.price_per_night) }}/night)</option>{% endfor %}</select></label>
-			<label>Staff member<select name="staff_id" required>{% for s in staff %}<option value="{{ s.staff_id }}"{% if form_values.get('staff_id', '') == s.staff_id|string %} selected{% endif %}>{{ s.name }}</option>{% endfor %}</select></label>
-			<div class="date-fields">
-				<label>Check-in<input type="date" name="check_in" value="{{ form_values.get('check_in', '') }}" required></label>
-				<label>Check-out<input type="date" name="check_out" value="{{ form_values.get('check_out', '') }}" required></label>
-			</div>
-			{% if session.get('role') == 'admin' %}
-				<label class="phone-update-confirmation"><input type="checkbox" name="confirm_phone_update" value="yes"> I confirm a changed phone number should replace the customer's saved number.</label>
-			{% endif %}
-			<button type="submit">Confirm reservation <span aria-hidden="true">→</span></button>
-		</form>
-	</section>
-	<aside class="booking-note">
-		<p class="eyebrow eyebrow-light">A NOTE ON YOUR RESERVATION</p>
-		<h2>Good stays begin with the details.</h2>
-		<p>Your dates are checked against existing reservations. Back-to-back stays are welcome; overlapping bookings are not.</p>
-		<div class="booking-note-rule"></div>
-		<p class="small-note">Your bill is calculated from the number of nights and the selected room rate.</p>
-	</aside>
+    <div class="booking-card">
+        <form method="post" action="{{ url_for('book') }}" class="standard-form" id="bookingForm">
+            <!-- Customer Selection -->
+            <div class="form-group">
+                <label for="customer_id">Select Customer: <span class="required">*</span></label>
+                <select id="customer_id" name="customer_id" required>
+                    <option value="" disabled {% if not customers %}selected{% endif %}>-- Select Customer --</option>
+                    {% for c in customers %}
+                    <option value="{{ c.customer_id }}">
+                        {{ c.name }} ({{ c.phone if c.phone else c.email }})
+                    </option>
+                    {% endfor %}
+                </select>
+                <small class="form-help">New guest? <a href="{{ url_for('customers') }}">Add customer first</a></small>
+            </div>
+
+            <!-- Room Selection -->
+            <div class="form-group">
+                <label for="room_id">Select Room: <span class="required">*</span></label>
+                <select id="room_id" name="room_id" required>
+                    <option value="" disabled {% if not selected_room_id %}selected{% endif %}>-- Select Room --</option>
+                    {% for r in rooms %}
+                    <option value="{{ r.room_id }}" {% if selected_room_id == r.room_id %}selected{% endif %}>
+                        Room {{ r.room_no }} - {{ r.type_name }} (₹{{ "%.2f"|format(r.price_per_night) }} / night)
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Staff Selection -->
+            <div class="form-group">
+                <label for="staff_id">Staff Attendant: <span class="required">*</span></label>
+                <select id="staff_id" name="staff_id" required>
+                    {% for s in staff %}
+                    <option value="{{ s.staff_id }}">
+                        {{ s.name }} ({{ s.role }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Date Fields -->
+            <div class="form-row">
+                <div class="form-group col-half">
+                    <label for="check_in">Check-in Date: <span class="required">*</span></label>
+                    <input type="date" id="check_in" name="check_in" value="{{ default_check_in }}" required>
+                </div>
+                <div class="form-group col-half">
+                    <label for="check_out">Check-out Date: <span class="required">*</span></label>
+                    <input type="date" id="check_out" name="check_out" value="{{ default_check_out }}" required>
+                </div>
+            </div>
+
+            <!-- Client-side Error Message Container -->
+            <div id="dateValidationError" class="alert-box alert-error" style="display: none;">
+                Check-out date must be strictly after the check-in date.
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-large">Confirm & Book Reservation</button>
+                <a href="{{ url_for('home') }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Informational Note for DBMS College Project -->
+    <div class="info-sidebar">
+        <div class="info-card">
+            <h3>🔒 Database Concurrency & Safety</h3>
+            <p>
+                <strong>Row-Level Locking:</strong> Before inserting, the backend initiates a transaction and executes:
+            </p>
+            <code>SELECT room_id FROM Room WHERE room_id = ? FOR UPDATE;</code>
+            <p>
+                This serializes concurrent booking requests so two staff members cannot book the exact same room simultaneously.
+            </p>
+            <hr>
+            <h3>⚡ MySQL Trigger Protection</h3>
+            <p>
+                The <code>before_reservation_insert</code> trigger checks if another reservation for this room overlaps the dates:
+            </p>
+            <code>new.check_in &lt; existing.check_out AND new.check_out &gt; existing.check_in</code>
+            <p>
+                If an overlap is detected, the database aborts the transaction with error:
+                <em>"Room already booked for these dates"</em>.
+            </p>
+        </div>
+    </div>
 </div>
 {% endblock %}

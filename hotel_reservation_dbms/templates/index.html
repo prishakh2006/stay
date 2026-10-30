@@ -1,67 +1,108 @@
 {% extends 'base.html' %}
-{% block title %}Blue Orchid | A more considered stay{% endblock %}
+
+{% block title %}Home - LuxeStay Hotel{% endblock %}
+
 {% block content %}
-<section class="hero">
-	<div class="hero-content">
-		<p class="eyebrow eyebrow-light">A QUIETER KIND OF LUXURY</p>
-		<h1>Blue Orchid</h1>
-		<p class="hero-tagline">Arrive for the details.<br>Stay for how it feels.</p>
-		<a class="button button-gold" href="{{ url_for('book') }}">Reserve your stay <span aria-hidden="true">↗</span></a>
-	</div>
-	<div class="hero-caption"><span>AN ADDRESS TO RETURN TO</span><span>01 / 30 ROOMS</span></div>
+<section class="hero-banner">
+    <div class="hero-content">
+        <span class="hero-tag">Welcome to LuxeStay</span>
+        <h1>Comfort, Elegance, & Effortless Booking</h1>
+        <p class="hero-subtitle">
+            Experience premium hospitality across our Standard, Deluxe, and Suite rooms.
+            Search available rooms below for your desired dates.
+        </p>
+    </div>
 </section>
 
-<section class="search-panel panel" aria-labelledby="search-heading">
-	<div class="section-heading">
-		<div><p class="eyebrow">PLAN YOUR VISIT</p><h2 id="search-heading">Find your room</h2></div>
-		<p>Thoughtful rooms, ready when you are.</p>
-	</div>
-	<form method="get" class="form-grid search-form">
-		<label>Room type<select name="type_id" required>
-			<option value="">Choose a room type</option>
-			{% for room_type in room_types %}
-				<option value="{{ room_type.type_id }}"{% if type_id == room_type.type_id %} selected{% endif %}>{{ room_type.type_name }}</option>
-			{% endfor %}
-		</select></label>
-		<label>Check-in<input type="date" name="check_in" required value="{{ check_in }}"></label>
-		<label>Check-out<input type="date" name="check_out" required value="{{ check_out }}"></label>
-		<button type="submit">Search availability <span aria-hidden="true">→</span></button>
-	</form>
-	{% if check_in and check_out and type_id %}
-		<div class="results-heading"><h3>Available for your dates</h3><span>{{ rooms|length }} rooms</span></div>
-		{% if rooms %}
-			<div class="available-grid">
-				{% for room in rooms %}
-					<article class="available-room">
-						<div><span class="room-type">{{ room.type_name }}</span><h3>Room {{ room.room_no }}</h3><p>{{ room.capacity }} guests · ₹{{ '%.2f'|format(room.price_per_night) }} / night</p></div>
-						<a class="text-link" href="{{ url_for('book', room_id=room.room_id, check_in=check_in, check_out=check_out) }}">Book this room <span aria-hidden="true">↗</span></a>
-					</article>
-				{% endfor %}
-			</div>
-		{% else %}
-			<p class="empty-state">No rooms of this type are available for those dates. Try one of these nearby options.</p>
-			{% if suggestions %}
-				<div class="available-grid">
-					{% for suggestion in suggestions %}
-						<a class="button button-outline" href="{{ url_for('book', room_id=suggestion.room_id, check_in=suggestion.check_in.isoformat(), check_out=suggestion.check_out.isoformat()) }}">
-							{{ suggestion.check_in.strftime('%d %b') }}–{{ suggestion.check_out.strftime('%d %b') }} · Room {{ suggestion.room_no }}
-						</a>
-					{% endfor %}
-				</div>
-			{% else %}
-				<p class="empty-state">No alternatives were found within 14 days.</p>
-			{% endif %}
-		{% endif %}
-	{% endif %}
+<!-- Room Search Section (Query 1: Free rooms for a date range) -->
+<section class="panel search-panel">
+    <div class="panel-header">
+        <h2>🔍 Check Room Availability</h2>
+        <p>Select your check-in and check-out dates to find free rooms.</p>
+    </div>
+
+    <form method="get" action="{{ url_for('home') }}" class="search-form">
+        <div class="form-group">
+            <label for="check_in">Check-in Date:</label>
+            <input type="date" id="check_in" name="check_in" value="{{ check_in }}" required>
+        </div>
+        <div class="form-group">
+            <label for="check_out">Check-out Date:</label>
+            <input type="date" id="check_out" name="check_out" value="{{ check_out }}" required>
+        </div>
+        <div class="form-group form-actions-inline">
+            <button type="submit" class="btn btn-primary">Search Free Rooms</button>
+        </div>
+    </form>
 </section>
 
-<section class="welcome-row">
-	<div><p class="eyebrow">A PLACE TO UNWIND</p><h2>Comfort with a<br>little more intention.</h2></div>
-	<p>From calm, considered rooms to spacious suites, find a stay shaped around your time away.</p>
+<!-- Search Results Display -->
+{% if search_performed %}
+<section class="panel results-panel">
+    <div class="panel-header">
+        <h3>Available Rooms from {{ check_in }} to {{ check_out }}</h3>
+        <p class="results-meta">Found <strong>{{ available_rooms|length }}</strong> available room(s)</p>
+    </div>
+
+    {% if available_rooms %}
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Room No</th>
+                    <th>Floor</th>
+                    <th>Room Type</th>
+                    <th>Capacity</th>
+                    <th>Price / Night</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for room in available_rooms %}
+                <tr>
+                    <td><strong class="highlight-room">Room {{ room.room_no }}</strong></td>
+                    <td>Floor {{ room.floor }}</td>
+                    <td>
+                        <span class="badge badge-type badge-{{ room.type_name|lower }}">
+                            {{ room.type_name }}
+                        </span>
+                    </td>
+                    <td>👥 {{ room.capacity }} Guests</td>
+                    <td><strong>₹{{ "%.2f"|format(room.price_per_night) }}</strong></td>
+                    <td>
+                        <a href="{{ url_for('book', room_id=room.room_id, check_in=check_in, check_out=check_out) }}" class="btn btn-sm btn-success">
+                            Book This Room →
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert-box alert-warning">
+        <p>No rooms are available for the selected date range ({{ check_in }} to {{ check_out }}). Please try different dates.</p>
+    </div>
+    {% endif %}
 </section>
-<section class="three room-type-highlights" aria-label="Room categories">
-	<article><span class="highlight-number">01</span><h3>Standard</h3><p>Comfortable essentials for two.</p><strong>₹2,000 <small>/ night</small></strong></article>
-	<article><span class="highlight-number">02</span><h3>Deluxe</h3><p>More room to settle in, for up to three.</p><strong>₹3,500 <small>/ night</small></strong></article>
-	<article><span class="highlight-number">03</span><h3>Suite</h3><p>A generous retreat for up to four.</p><strong>₹6,000 <small>/ night</small></strong></article>
+{% endif %}
+
+<!-- Hotel Features Highlights -->
+<section class="features-grid">
+    <div class="feature-card">
+        <div class="feature-icon">🛡️</div>
+        <h3>Double-Booking Protection</h3>
+        <p>Database triggers prevent overlap and row locks ensure safe concurrent bookings.</p>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">💳</div>
+        <h3>Flexible Payments</h3>
+        <p>Supports split payments via Cash, Card, or UPI with clear balance tracking.</p>
+    </div>
+    <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h3>Real-time Reports</h3>
+        <p>Live occupancy percentages and dynamic bill calculations based on stay duration.</p>
+    </div>
 </section>
 {% endblock %}

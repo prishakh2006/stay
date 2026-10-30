@@ -1,58 +1,96 @@
 {% extends 'base.html' %}
-{% block title %}My stays | Blue Orchid{% endblock %}
+
+{% block title %}Booking History - {{ customer.name }}{% endblock %}
+
 {% block content %}
-<section class="page-intro">
-	<p class="eyebrow">YOUR RESERVATIONS</p>
-	<h1>Welcome, {{ customer.name }}</h1>
-	<p>View your stays, cancel eligible bookings, and review completed visits.</p>
+<section class="page-header flex-header">
+    <div>
+        <a href="{{ url_for('customers') }}" class="back-link">← Back to Customers</a>
+        <h1>📜 Booking History: {{ customer.name }}</h1>
+        <p>Customer ID #{{ customer.customer_id }} • Phone: {{ customer.phone if customer.phone else 'N/A' }} • Email: {{ customer.email if customer.email else 'N/A' }}</p>
+    </div>
+    <a href="{{ url_for('book') }}" class="btn btn-primary">Book New Stay</a>
 </section>
-<section class="panel history-panel">
-	<div class="section-heading">
-		<div><p class="eyebrow">PERSONAL HISTORY</p><h2>My stays</h2></div>
-		<span class="history-count">{{ history|length }} stays</span>
-	</div>
-	<div class="table-wrap">
-		<table>
-			<thead><tr><th>Room</th><th>Room type</th><th>Check-in</th><th>Check-out</th><th>Nights</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead>
-			<tbody>
-				{% for stay in history %}
-					<tr>
-						<td class="table-primary">{{ stay.room_no }}</td>
-						<td>{{ stay.type_name }}</td>
-						<td>{{ stay.check_in }}</td>
-						<td>{{ stay.check_out }}</td>
-						<td>{{ stay.nights }}</td>
-						<td>₹{{ '%.2f'|format(stay.total) }}</td>
-						<td><span class="status-pill status-{{ stay.status|lower }}">{{ stay.status }}</span></td>
-						<td>
-							{% if stay.status == 'Booked' and stay.check_in >= cancel_after %}
-								<form method="post" action="{{ url_for('cancel_reservation', reservation_id=stay.reservation_id) }}">
-									<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-									<button type="submit">Cancel</button>
-								</form>
-							{% elif stay.status == 'Completed' and not stay.review_id %}
-								<form method="post" action="{{ url_for('submit_review') }}" class="review-form">
-									<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-									<input type="hidden" name="reservation_id" value="{{ stay.reservation_id }}">
-									<label>Rating<select name="rating" required>
-										<option value="">Choose</option>
-										{% for rating in range(1, 6) %}<option value="{{ rating }}">{{ rating }}</option>{% endfor %}
-									</select></label>
-									<label>Comment (optional)<textarea name="comment" maxlength="500" rows="2"></textarea></label>
-									<button type="submit">Leave a review</button>
-								</form>
-							{% elif stay.review_id %}
-								<span>Reviewed · {{ stay.rating }}/5</span>
-							{% else %}
-								<span>—</span>
-							{% endif %}
-						</td>
-					</tr>
-				{% else %}
-					<tr><td colspan="8" class="empty-state">You do not have any stays yet.</td></tr>
-				{% endfor %}
-			</tbody>
-		</table>
-	</div>
+
+<!-- Summary Statistics Cards -->
+<section class="stats-row">
+    <div class="stat-card">
+        <span class="stat-label">Total Stays</span>
+        <span class="stat-value">{{ stays|length }}</span>
+    </div>
+    <div class="stat-card stat-highlight">
+        <span class="stat-label">Grand Total Billed</span>
+        <span class="stat-value">₹{{ "%.2f"|format(grand_total) }}</span>
+        <small class="stat-subtext">Calculated: Nights × Room Rate</small>
+    </div>
+    <div class="stat-card">
+        <span class="stat-label">Total Paid</span>
+        <span class="stat-value">₹{{ "%.2f"|format(total_paid) }}</span>
+    </div>
+    <div class="stat-card {% if grand_total - total_paid > 0 %}stat-alert{% endif %}">
+        <span class="stat-label">Outstanding Balance</span>
+        <span class="stat-value">₹{{ "%.2f"|format(grand_total - total_paid) }}</span>
+    </div>
+</section>
+
+<!-- Stays Table (Query 2) -->
+<section class="panel">
+    <div class="panel-header">
+        <h3>Stay-by-Stay Breakdown (Query 2)</h3>
+        <p>Derived stay total: nights × room price. Bill total is never stored redundantly in the database.</p>
+    </div>
+
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Res #</th>
+                    <th>Room</th>
+                    <th>Type</th>
+                    <th>Check-in</th>
+                    <th>Check-out</th>
+                    <th>Nights</th>
+                    <th>Rate / Night</th>
+                    <th>Stay Total</th>
+                    <th>Paid</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stay in stays %}
+                <tr>
+                    <td>#{{ stay.reservation_id }}</td>
+                    <td><strong>Room {{ stay.room_no }}</strong></td>
+                    <td>{{ stay.type_name }}</td>
+                    <td>{{ stay.check_in }}</td>
+                    <td>{{ stay.check_out }}</td>
+                    <td>{{ stay.nights }} night(s)</td>
+                    <td>₹{{ "%.2f"|format(stay.price_per_night) }}</td>
+                    <td><strong class="text-success">₹{{ "%.2f"|format(stay.stay_total) }}</strong></td>
+                    <td>₹{{ "%.2f"|format(stay.amount_paid) }}</td>
+                    <td>
+                        <span class="status-pill status-{{ stay.status|lower }}">
+                            {{ stay.status }}
+                        </span>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="10" class="empty-table">No reservation records found for this customer.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            {% if stays %}
+            <tfoot>
+                <tr class="table-total-row">
+                    <td colspan="7" class="text-right"><strong>Grand Total ({{ stays|length }} stay{{ 's' if stays|length > 1 else '' }}):</strong></td>
+                    <td><strong class="text-success">₹{{ "%.2f"|format(grand_total) }}</strong></td>
+                    <td><strong>₹{{ "%.2f"|format(total_paid) }}</strong></td>
+                    <td></td>
+                </tr>
+            </tfoot>
+            {% endif %}
+        </table>
+    </div>
 </section>
 {% endblock %}
