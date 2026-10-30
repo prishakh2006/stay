@@ -6,7 +6,8 @@
 CREATE DATABASE IF NOT EXISTS hotel_reservation;
 USE hotel_reservation;
 
--- Drop existing objects in reverse dependency order
+-- Drop existing objects cleanly
+SET FOREIGN_KEY_CHECKS = 0;
 DROP TRIGGER IF EXISTS before_reservation_insert;
 DROP TRIGGER IF EXISTS before_reservation_update;
 DROP TABLE IF EXISTS Payment;
@@ -17,6 +18,7 @@ DROP TABLE IF EXISTS RoomType;
 DROP TABLE IF EXISTS Customer;
 DROP TABLE IF EXISTS `User`;
 DROP TABLE IF EXISTS Review;
+SET FOREIGN_KEY_CHECKS = 1;
 
 -- -----------------------------------------------------------------------------
 -- 1. Customer Table (in 3NF: all non-key attributes depend only on customer_id)
