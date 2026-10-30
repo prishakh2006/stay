@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Payments & reports | LuxeStay{% endblock %}
+{% block title %}Payments & reports | Blue Orchid{% endblock %}
 {% block content %}
 <section class="page-intro">
 	<p class="eyebrow">FINANCIAL OVERVIEW</p>
@@ -18,6 +18,7 @@
 <section class="panel payment-panel">
 	<div class="section-heading"><div><p class="eyebrow">PAYMENT ENTRY</p><h2>Record a payment</h2></div><span class="step-mark">FLEXIBLE PAYMENTS</span></div>
 	<form method="post" class="form-grid payment-form">
+		<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 		<label>Reservation<select name="reservation_id" required>{% for r in reservations %}<option value="{{ r.reservation_id }}">#{{ r.reservation_id }} — {{ r.name }}, room {{ r.room_no }} (bill ₹{{ '%.2f'|format(r.bill_total) }})</option>{% endfor %}</select></label>
 		<label>Amount (₹)<input type="number" name="amount" min="0.01" step="0.01" required></label>
 		<label>Payment mode<select name="mode" required><option>Cash</option><option>Card</option><option>UPI</option></select></label>

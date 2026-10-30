@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block title %}Request could not be verified | Blue Orchid{% endblock %}
+{% block content %}
+<section class="page-intro">
+	<p class="eyebrow">SECURITY CHECK</p>
+	<h1>Request could not be verified</h1>
+	<p>Refresh the page and submit the form again.</p>
+	<a class="button button-outline" href="{{ url_for('home') }}">Return home</a>
+</section>
+{% endblock %}

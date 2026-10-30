@@ -8,4 +8,12 @@ document.querySelectorAll('form').forEach(function (form) {
       alert('Check-out must be after check-in.');
     }
   });
-});s
+
+  const customerSelect = document.querySelector('#booking-customer');
+  const phoneInput = document.querySelector('#booking-phone');
+  if (customerSelect && phoneInput) {
+    customerSelect.addEventListener('change', function () {
+      const option = customerSelect.options[customerSelect.selectedIndex];
+      phoneInput.value = option.dataset.phone || '';
+    });
+  }s

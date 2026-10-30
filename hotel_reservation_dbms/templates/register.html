@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Customer registration | Blue Orchid{% endblock %}
+{% block content %}
+<section class="page-intro">
+	<p class="eyebrow">YOUR BLUE ORCHID ACCOUNT</p>
+	<h1>Customer registration</h1>
+	<p>Create an account to book stays and view your own reservation history.</p>
+</section>
+<section class="panel auth-panel">
+	<form method="post" class="form-grid single">
+		<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+		<label>Name<input name="name" autocomplete="name" maxlength="100" required></label>
+		<label>Username<input name="username" autocomplete="username" maxlength="80" required></label>
+		<label>Email (optional)<input type="email" name="email" autocomplete="email" maxlength="120"></label>
+		<label>Phone<input type="tel" name="phone" inputmode="tel" autocomplete="tel" maxlength="16"
+			pattern="\+?[0-9]{10,15}" title="Enter 10 to 15 digits, with an optional leading +" required></label>
+		<label>Password (at least 8 characters)<input type="password" name="password" autocomplete="new-password" minlength="8" maxlength="256" required></label>
+		<label>Confirm password<input type="password" name="password_confirmation" autocomplete="new-password" minlength="8" maxlength="256" required></label>
+		<button type="submit">Create account</button>
+	</form>
+</section>
+{% endblock %}

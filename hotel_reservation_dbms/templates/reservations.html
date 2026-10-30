@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Reservations | Blue Orchid{% endblock %}
+{% block content %}
+<section class="page-intro">
+	<p class="eyebrow">ADMINISTRATION</p>
+	<h1>Reservations</h1>
+	<p>Review all stays and cancel booked reservations with a recorded reason.</p>
+</section>
+<section class="panel">
+	<div class="table-wrap">
+		<table>
+			<thead><tr><th>Guest</th><th>Room</th><th>Check-in</th><th>Check-out</th><th>Status</th><th>Cancellation</th></tr></thead>
+			<tbody>
+				{% for reservation in reservations %}
+					<tr>
+						<td>{{ reservation.name }}</td>
+						<td>{{ reservation.room_no }} · {{ reservation.type_name }}</td>
+						<td>{{ reservation.check_in }}</td>
+						<td>{{ reservation.check_out }}</td>
+						<td><span class="status-pill status-{{ reservation.status|lower }}">{{ reservation.status }}</span></td>
+						<td>
+							{% if reservation.status == 'Booked' %}
+								<form method="post" action="{{ url_for('cancel_reservation', reservation_id=reservation.reservation_id) }}" class="cancel-form">
+									<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+									<label>Reason<input name="cancel_reason" maxlength="255" required></label>
+									<button type="submit">Cancel booking</button>
+								</form>
+							{% elif reservation.status == 'Cancelled' %}
+								{{ reservation.cancelled_by or '—' }}{% if reservation.cancel_reason %}: {{ reservation.cancel_reason }}{% endif %}
+							{% else %}
+								—
+							{% endif %}
+						</td>
+					</tr>
+				{% else %}
+					<tr><td colspan="6" class="empty-state">No reservations found.</td></tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+</section>
+{% endblock %}

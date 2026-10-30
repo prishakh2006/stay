@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Admin dashboard | Blue Orchid{% endblock %}
+{% block content %}
+<section class="page-intro">
+	<p class="eyebrow">BLUE ORCHID ADMINISTRATION</p>
+	<h1>Dashboard</h1>
+	<p>Manage hotel operations and review the current reservation summary.</p>
+</section>
+
+<section class="three" aria-label="Hotel summary">
+	<article class="panel"><p class="eyebrow">RESERVATIONS</p><h2>{{ summary.reservation_count }}</h2><a class="text-link" href="{{ url_for('reservations') }}">View reservations</a></article>
+	<article class="panel"><p class="eyebrow">CURRENTLY BOOKED</p><h2>{{ summary.booked_count }}</h2><a class="text-link" href="{{ url_for('payments') }}">Payments &amp; reports</a></article>
+	<article class="panel"><p class="eyebrow">CUSTOMERS</p><h2>{{ summary.customer_count }}</h2><a class="text-link" href="{{ url_for('customers') }}">Manage customers</a></article>
+	<article class="panel"><p class="eyebrow">STAFF</p><h2>{{ summary.staff_count }}</h2><a class="text-link" href="{{ url_for('staff') }}">Manage staff</a></article>
+	<article class="panel"><p class="eyebrow">REVIEWS</p><h2>{{ summary.review_count }}</h2><a class="text-link" href="{{ url_for('reviews') }}">Review report</a></article>
+</section>
+{% endblock %}

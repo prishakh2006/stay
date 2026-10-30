@@ -1,12 +1,12 @@
 {% extends 'base.html' %}
-{% block title %}Rooms | LuxeStay{% endblock %}
+{% block title %}Rooms | Blue Orchid{% endblock %}
 {% block content %}
 <section class="page-intro">
 	<p class="eyebrow">STAY YOUR WAY</p>
 	<h1>Rooms with room to breathe.</h1>
-	<p>Explore all 30 rooms at LuxeStay. Your stay total is calculated from nights and the room rate.</p>
+	<p>Explore all 30 rooms at Blue Orchid. Your stay total is calculated from nights and the room rate.</p>
 </section>
-<section class="room-grid" aria-label="All LuxeStay rooms">
+<section class="room-grid" aria-label="All Blue Orchid rooms">
 	{% for room in rooms %}
 		{% if room.type_name == 'Standard' %}
 			{% set room_image = 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1000&q=85' %}
@@ -17,7 +17,7 @@
 		{% endif %}
 		<article class="room-card">
 			<div class="room-image-wrap">
-				<img src="{{ room_image }}" alt="{{ room.type_name }} room at LuxeStay" loading="lazy">
+				<img src="{{ room_image }}" alt="{{ room.type_name }} room at Blue Orchid" loading="lazy">
 				<span class="room-number">ROOM {{ room.room_no }}</span>
 			</div>
 			<div class="room-card-body">

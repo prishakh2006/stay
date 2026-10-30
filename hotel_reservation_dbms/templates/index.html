@@ -1,10 +1,10 @@
 {% extends 'base.html' %}
-{% block title %}LuxeStay | A more considered stay{% endblock %}
+{% block title %}Blue Orchid | A more considered stay{% endblock %}
 {% block content %}
 <section class="hero">
 	<div class="hero-content">
 		<p class="eyebrow eyebrow-light">A QUIETER KIND OF LUXURY</p>
-		<h1>LuxeStay</h1>
+		<h1>Blue Orchid</h1>
 		<p class="hero-tagline">Arrive for the details.<br>Stay for how it feels.</p>
 		<a class="button button-gold" href="{{ url_for('book') }}">Reserve your stay <span aria-hidden="true">↗</span></a>
 	</div>
@@ -17,23 +17,40 @@
 		<p>Thoughtful rooms, ready when you are.</p>
 	</div>
 	<form method="get" class="form-grid search-form">
+		<label>Room type<select name="type_id" required>
+			<option value="">Choose a room type</option>
+			{% for room_type in room_types %}
+				<option value="{{ room_type.type_id }}"{% if type_id == room_type.type_id %} selected{% endif %}>{{ room_type.type_name }}</option>
+			{% endfor %}
+		</select></label>
 		<label>Check-in<input type="date" name="check_in" required value="{{ check_in }}"></label>
 		<label>Check-out<input type="date" name="check_out" required value="{{ check_out }}"></label>
 		<button type="submit">Search availability <span aria-hidden="true">→</span></button>
 	</form>
-	{% if check_in and check_out %}
+	{% if check_in and check_out and type_id %}
 		<div class="results-heading"><h3>Available for your dates</h3><span>{{ rooms|length }} rooms</span></div>
 		{% if rooms %}
 			<div class="available-grid">
 				{% for room in rooms %}
 					<article class="available-room">
 						<div><span class="room-type">{{ room.type_name }}</span><h3>Room {{ room.room_no }}</h3><p>{{ room.capacity }} guests · ₹{{ '%.2f'|format(room.price_per_night) }} / night</p></div>
-						<a class="text-link" href="{{ url_for('book') }}">Book this room <span aria-hidden="true">↗</span></a>
+						<a class="text-link" href="{{ url_for('book', room_id=room.room_id, check_in=check_in, check_out=check_out) }}">Book this room <span aria-hidden="true">↗</span></a>
 					</article>
 				{% endfor %}
 			</div>
 		{% else %}
-			<p class="empty-state">No rooms are available for those dates. Adjust your stay and search again.</p>
+			<p class="empty-state">No rooms of this type are available for those dates. Try one of these nearby options.</p>
+			{% if suggestions %}
+				<div class="available-grid">
+					{% for suggestion in suggestions %}
+						<a class="button button-outline" href="{{ url_for('book', room_id=suggestion.room_id, check_in=suggestion.check_in.isoformat(), check_out=suggestion.check_out.isoformat()) }}">
+							{{ suggestion.check_in.strftime('%d %b') }}–{{ suggestion.check_out.strftime('%d %b') }} · Room {{ suggestion.room_no }}
+						</a>
+					{% endfor %}
+				</div>
+			{% else %}
+				<p class="empty-state">No alternatives were found within 14 days.</p>
+			{% endif %}
 		{% endif %}
 	{% endif %}
 </section>

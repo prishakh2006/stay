@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}My stays | Blue Orchid{% endblock %}
+{% block content %}
+<section class="page-intro">
+	<p class="eyebrow">YOUR RESERVATIONS</p>
+	<h1>Welcome, {{ customer.name }}</h1>
+	<p>View your stays, cancel eligible bookings, and review completed visits.</p>
+</section>
+<section class="panel history-panel">
+	<div class="section-heading">
+		<div><p class="eyebrow">PERSONAL HISTORY</p><h2>My stays</h2></div>
+		<span class="history-count">{{ history|length }} stays</span>
+	</div>
+	<div class="table-wrap">
+		<table>
+			<thead><tr><th>Room</th><th>Room type</th><th>Check-in</th><th>Check-out</th><th>Nights</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead>
+			<tbody>
+				{% for stay in history %}
+					<tr>
+						<td class="table-primary">{{ stay.room_no }}</td>
+						<td>{{ stay.type_name }}</td>
+						<td>{{ stay.check_in }}</td>
+						<td>{{ stay.check_out }}</td>
+						<td>{{ stay.nights }}</td>
+						<td>₹{{ '%.2f'|format(stay.total) }}</td>
+						<td><span class="status-pill status-{{ stay.status|lower }}">{{ stay.status }}</span></td>
+						<td>
+							{% if stay.status == 'Booked' and stay.check_in >= cancel_after %}
+								<form method="post" action="{{ url_for('cancel_reservation', reservation_id=stay.reservation_id) }}">
+									<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+									<button type="submit">Cancel</button>
+								</form>
+							{% elif stay.status == 'Completed' and not stay.review_id %}
+								<form method="post" action="{{ url_for('submit_review') }}" class="review-form">
+									<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+									<input type="hidden" name="reservation_id" value="{{ stay.reservation_id }}">
+									<label>Rating<select name="rating" required>
+										<option value="">Choose</option>
+										{% for rating in range(1, 6) %}<option value="{{ rating }}">{{ rating }}</option>{% endfor %}
+									</select></label>
+									<label>Comment (optional)<textarea name="comment" maxlength="500" rows="2"></textarea></label>
+									<button type="submit">Leave a review</button>
+								</form>
+							{% elif stay.review_id %}
+								<span>Reviewed · {{ stay.rating }}/5</span>
+							{% else %}
+								<span>—</span>
+							{% endif %}
+						</td>
+					</tr>
+				{% else %}
+					<tr><td colspan="8" class="empty-state">You do not have any stays yet.</td></tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+</section>
+{% endblock %}
